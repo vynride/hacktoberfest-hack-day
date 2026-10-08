@@ -76,6 +76,12 @@ The key design decision is that **CraftGemma reads pages visually.** A browser a
 
 Every generated step image is **checked by Gemma 4 against the step text** before the user sees it. Images that don't match are regenerated with corrected prompts, or replaced with the original source photo.
 
+<p align="center">
+  <img width="1791" height="392" alt="CraftGemma pipeline: URL or PDF, then Read, Filter, Extract, Illustrate, Verify, producing a visual step-by-step guide" src="https://github.com/user-attachments/assets/80c76938-dca9-4fe3-83a0-38d9c556184c" />
+</p>
+
+<p align="center"><sub>Blue: Gemma 4. Orange: image generation. Purple: user input and output.</sub></p>
+
 ---
 
 ## 4. Proposed Solution
