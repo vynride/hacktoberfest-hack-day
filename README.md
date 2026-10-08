@@ -86,7 +86,7 @@ The key design decision is that **CraftGemma reads pages visually.** A browser a
 Every generated step image is **checked by Gemma 4 against the step text** before the user sees it. Images that don't match are regenerated with corrected prompts, or replaced with the original source photo.
 
 <p align="center">
-  <img width="1791" height="392" alt="CraftGemma pipeline: URL or PDF, then Read, Filter, Extract, Illustrate, Verify, producing a visual step-by-step guide" src="https://github.com/user-attachments/assets/80c76938-dca9-4fe3-83a0-38d9c556184c" />
+  <img width="1791" height="392" alt="CraftGemma pipeline: URL or PDF, then Read, Filter, Extract, Illustrate, Verify, producing a visual step-by-step guide" src="https://github.com/user-attachments/assets/9f6bdb34-1da6-47a0-a458-d7e78b153e78" />
 </p>
 
 <p align="center"><sub>Blue: Gemma 4. Orange: image generation. Purple: user input and output.</sub></p>
@@ -203,7 +203,7 @@ The surrounding code is deterministic. It runs the browser, deduplicates tiles, 
 ## 10. System Architecture
 
 <p align="center">
-  <img width="1521" height="794" alt="CraftGemma system architecture: Next.js frontend, FastAPI backend and job orchestrator, reader with Playwright and PDF renderer, Gemma 4 roles on Ollama, SQLite and file store, image adapter to FLUX.1-schnell" src="https://github.com/user-attachments/assets/36e323c6-89d2-46c5-a4e8-d5d2e3620152" />
+  <img width="1521" height="794" alt="CraftGemma system architecture: Next.js frontend, FastAPI backend and job orchestrator, reader with Playwright and PDF renderer, Gemma 4 roles on Ollama, SQLite and file store, image adapter to FLUX.1-schnell" src="https://github.com/user-attachments/assets/998c6d5e-7998-486e-ab29-f92c0b46544a" />
 </p>
 
 <p align="center"><sub>Blue: Gemma 4. Yellow: deterministic code. Green: storage. Orange: image generation. Purple: user and frontend.</sub></p>
@@ -369,7 +369,7 @@ CraftGemma has two agent loops. Both are bounded, observable and recoverable.
 ### 13.1 Reading agent
 
 <p align="center">
-  <img width="680" height="1019" alt="Reading agent loop: observe screenshot with numbered elements, Gemma picks scroll, click, dismiss or done, capture and dedupe tile, check budget, repeat until done" src="https://github.com/user-attachments/assets/bfcf06a2-bb74-4b84-99d9-93aa46d3da9e" />
+  <img width="680" height="1019" alt="Reading agent loop: observe screenshot with numbered elements, Gemma picks scroll, click, dismiss or done, capture and dedupe tile, check budget, repeat until done" src="https://github.com/user-attachments/assets/35ff4af9-6377-42f5-89ec-78cc32f2406c" />
 </p>
 
 **Guardrails**
@@ -383,7 +383,7 @@ CraftGemma has two agent loops. Both are bounded, observable and recoverable.
 ### 13.2 Illustrate-and-verify agent
 
 <p align="center">
-  <img width="894" height="964" alt="Illustrate-and-verify loop: art director writes prompt, FLUX generates image, Gemma verifier checks it, retries with a rewritten prompt, then falls back to the source photo or a flagged text-only step" src="https://github.com/user-attachments/assets/4411a8dc-b807-41c7-bf3e-03a0b326b395" />
+  <img width="894" height="964" alt="Illustrate-and-verify loop: art director writes prompt, FLUX generates image, Gemma verifier checks it, retries with a rewritten prompt, then falls back to the source photo or a flagged text-only step" src="https://github.com/user-attachments/assets/9af1429f-f181-4864-ba8b-8b8dd9b4b506" />
 </p>
 
 Every decision (actions, verdicts, retries) is logged and visible in the UI's "how this guide was built" panel. The same panel is the main debugging view.
