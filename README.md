@@ -359,26 +359,9 @@ CraftGemma has two agent loops. Both are bounded, observable and recoverable.
 
 ### 13.1 Reading agent
 
-```mermaid
-stateDiagram-v2
-    [*] --> Observe
-    Observe: Screenshot + numbered elements
-    Observe --> Decide
-    Decide: Gemma picks one action
-    Decide --> Scroll: scroll
-    Decide --> Click: click / next_page
-    Decide --> Dismiss: dismiss pop-up
-    Decide --> Done: done
-    Scroll --> Capture
-    Click --> Capture
-    Dismiss --> Observe
-    Capture: Save tile + DOM text, dedupe
-    Capture --> Guard
-    Guard: Budget left? Page changed?
-    Guard --> Observe: yes
-    Guard --> Done: no
-    Done --> [*]
-```
+<p align="center">
+  <img width="680" height="1019" alt="Reading agent loop: observe screenshot with numbered elements, Gemma picks scroll, click, dismiss or done, capture and dedupe tile, check budget, repeat until done" src="https://github.com/user-attachments/assets/bfcf06a2-bb74-4b84-99d9-93aa46d3da9e" />
+</p>
 
 **Guardrails**
 
