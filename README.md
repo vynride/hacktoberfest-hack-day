@@ -435,15 +435,14 @@ Every decision (actions, verdicts, retries) is logged and visible in the UI's "h
 
 ## 16. Implementation Approach
 
-### 16.1 Team split (3 people)
+### 16.1 Team split
 
-| Person | Owns |
+| Role | Owns |
 |---|---|
-| A: Agent and model | Ollama setup, Navigator, classifier, extractor prompts and schemas, verifier |
-| B: Backend | FastAPI jobs, orchestrator, Playwright plumbing, PDF reader, image adapter, storage, SSE |
-| C: Frontend and evaluation | Next.js build view and guide view, Q&A panel, log panel, evaluation script and test set |
-
-With two people, A and B merge and C stays the same.
+| Reading agent | Playwright control, set-of-marks overlays, Navigator loop and guardrails, tile capture and dedupe, PDF reader, tile classifier |
+| Extraction and verification | Ollama setup, extraction schemas and map-reduce merge, grounding checks, art director, verifier, guide assistant |
+| Backend and image pipeline | FastAPI jobs, orchestrator, SSE events, storage, image adapter and FLUX setup, Docker Compose |
+| Frontend and evaluation | Next.js build view and guide view, Q&A panel, build-log panel, evaluation script and labelled test set |
 
 ### 16.2 Build plan for the final
 
