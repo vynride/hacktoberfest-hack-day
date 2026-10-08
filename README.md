@@ -114,7 +114,7 @@ Results stream to the Next.js frontend as they are produced. The user sees the t
 1. **Site-agnostic reading.** Turn guides from at least six different sites, plus PDF manuals, into the same structured format, with no per-site code.
 2. **Faithful extraction.** Steps, materials and tools must come from the source, not be invented. Target: ≥ 90% step recall and ≥ 85% materials F1 on our labelled test set.
 3. **Images that match the step.** Every image shown to the user has passed Gemma 4's verification, or is the source's own photo.
-4. **Fast first result.** Text steps visible in under 60 seconds for a typical single-page guide on a consumer GPU laptop.
+4. **Fast first result.** Text steps visible in under 60 seconds for a typical single-page guide on a consumer GPU.
 5. **Local intelligence.** All reading, reasoning and verification run on Gemma 4 locally. Image generation uses an open-weight model behind an adapter, so where it runs is a deployment choice, not a design change.
 6. **Measured, not claimed.** Ship a reproducible evaluation script and report the results.
 
@@ -142,7 +142,7 @@ Results stream to the Next.js frontend as they are produced. The user sees the t
 | Component | Role in CraftGemma | License |
 |---|---|---|
 | **Gemma 4 E4B (instruction-tuned)**, Google | The core intelligence: browser-agent decisions, tile classification, structured extraction, prompt writing, image verification, grounded Q&A | Apache 2.0 |
-| **Gemma 4 E2B** | Fallback for 4–6 GB VRAM laptops and for the cheaper tile-classification step | Apache 2.0 |
+| **Gemma 4 E2B** | Fallback for low-memory GPUs and for the cheaper tile-classification step | Apache 2.0 |
 | **FLUX.1-schnell**, Black Forest Labs | Step-illustration generation (open-weight model behind an image adapter) | Apache 2.0 |
 | **Ollama** | Local inference server for Gemma 4, with structured (JSON-schema) outputs | MIT |
 | **Playwright** | Headless browser the agent controls | Apache 2.0 |
@@ -156,7 +156,7 @@ Gemma 4 is the only reasoning model in the system. Without it, the product has n
 **Why Gemma 4 E4B specifically**
 
 - **It sees.** Gemma 4 E4B accepts images natively. Reading screenshots is what makes CraftGemma site-agnostic, so a text-only model would put us back to writing per-site scrapers.
-- **It fits the hardware we have.** E4B is built for laptops and edge devices. A quantized E4B fits on the 4–8 GB VRAM GPU laptops our team will build and demo on. A larger multimodal model would not.
+- **It runs on consumer hardware.** E4B is built for laptops and edge devices, and a quantized build runs on an entry-level consumer GPU. Larger multimodal models do not.
 - **It follows schemas.** Every Gemma call in CraftGemma returns structured data (an action, a label, a guide, a verdict). Gemma 4 supports structured tool use, and Ollama can constrain output to a JSON schema. That combination makes a small model dependable inside a pipeline.
 - **Long context.** The 128K context window holds a whole extracted guide, so grounded Q&A can include the full guide in the prompt without a vector database.
 - **Apache 2.0.** We can ship CraftGemma as open source with no usage restrictions passed on to users.
@@ -170,14 +170,14 @@ Gemma 4 is the only reasoning model in the system. Without it, the product has n
 **Why FLUX.1-schnell, behind an adapter**
 
 - FLUX.1-schnell is open-weight under Apache 2.0 and produces good images in 1–4 sampling steps, which keeps per-step generation fast enough for retries.
-- Image generation is the heaviest workload in the system. We call it through a small adapter interface (`generate(prompt, seed, size)`), so the same code works whether FLUX runs on the Gemma laptop, on a second GPU machine, or on a quantized build. We will choose the deployment based on the compute available at the final. No proprietary model is involved.
+- Image generation is the heaviest workload in the system. We call it through a small adapter interface (`generate(prompt, seed, size)`), so the same code works whether FLUX runs on the same machine as Gemma, on a separate GPU server, or as a quantized build. No proprietary model is involved.
 
 **Alternatives considered**
 
 | Option | Why not |
 |---|---|
 | Site-specific scrapers + text LLM | Breaks on every new site and ignores what the page shows visually. |
-| Larger open VLMs (e.g. Gemma 4 26B/31B) | Don't fit in 4–8 GB VRAM. E4B is enough for reading and verification when outputs are schema-constrained. |
+| Larger open VLMs (e.g. Gemma 4 26B/31B) | Don't fit on consumer GPUs. E4B is enough for reading and verification when outputs are schema-constrained. |
 | Hosted proprietary VLM APIs | Against the spirit of the track, makes every verification call cost money, and sends untrusted pages to a third party. |
 | Classic OCR (e.g. Tesseract) only | Reads text but can't tell an ad from a step, can't judge whether a photo matches a step, and can't drive the browser. |
 
@@ -208,7 +208,7 @@ The surrounding code is deterministic. It runs the browser, deduplicates tiles, 
 
 <p align="center"><sub>Blue: Gemma 4. Yellow: deterministic code. Green: storage. Orange: image generation. Purple: user and frontend.</sub></p>
 
-**Deployment:** the backend, Ollama and the frontend run on one GPU laptop and start with a single `docker compose up`. FLUX runs wherever the available compute allows; the image adapter is configured with its address.
+**Deployment:** the backend, Ollama and the frontend run on one machine and start with a single `docker compose up`. FLUX runs on the same machine or a separate GPU server; the image adapter is configured with its address.
 
 ---
 
@@ -386,7 +386,7 @@ CraftGemma has two agent loops. Both are bounded, observable and recoverable.
   <img width="894" height="964" alt="Illustrate-and-verify loop: art director writes prompt, FLUX generates image, Gemma verifier checks it, retries with a rewritten prompt, then falls back to the source photo or a flagged text-only step" src="https://github.com/user-attachments/assets/4411a8dc-b807-41c7-bf3e-03a0b326b395" />
 </p>
 
-Every decision (actions, verdicts, retries) is logged and visible in the UI's "how this guide was built" panel. That panel doubles as our debugging view and as part of the demo.
+Every decision (actions, verdicts, retries) is logged and visible in the UI's "how this guide was built" panel. The same panel is the main debugging view.
 
 ---
 
@@ -397,7 +397,7 @@ Every decision (actions, verdicts, retries) is logged and visible in the UI's "h
 | Frontend | Next.js (App Router), React, Tailwind CSS | Fast to build; streaming UI via SSE |
 | Backend | Python, FastAPI, Pydantic, asyncio | Async jobs, strict schemas shared with the model's output |
 | Model serving | Ollama | Simple local serving of Gemma 4 with JSON-schema outputs; OpenAI-compatible API |
-| Core model | Gemma 4 E4B-it (quantized); E2B-it as fallback | Vision + structured output on a 4–8 GB GPU |
+| Core model | Gemma 4 E4B-it (quantized); E2B-it as fallback | Vision + structured output on a consumer GPU |
 | Image model | FLUX.1-schnell behind an adapter | Open-weight, fast, good quality; deployment set by available compute |
 | Browser automation | Playwright (Chromium) | Reliable headless browsing, screenshots, element boxes |
 | Page text | trafilatura | Clean main-text extraction to ground the vision model |
@@ -411,7 +411,7 @@ Every decision (actions, verdicts, retries) is logged and visible in the UI's "h
 
 ## 15. Expected Features
 
-**Core (must ship at the final)**
+**Core**
 
 - [ ] Paste any DIY URL, or upload a PDF
 - [ ] Gemma-driven browsing: scroll, dismiss pop-ups, expand folds, follow "next page"
@@ -538,7 +538,7 @@ Every model and library in the system is open source or open-weight.
 | **Extraction hallucinates steps or materials** | Guide no longer matches the source | Every step must cite source tiles; overlap check against DOM text; low-overlap steps re-extracted; measured by step precision in evaluation |
 | **Generated images don't match steps** | Misleading guide | Gemma verifier on every image; up to two corrected retries; fall back to source photo or text-only; badges show which is which |
 | **Inconsistent look across step images** | Guide looks stitched together | Shared style sheet from the hero photo; fixed seed per project; framing vocabulary in prompts |
-| **VRAM limits (4–8 GB)** | Gemma 4 E4B doesn't fit or is slow | Quantized E4B; E2B for classification and as full fallback; FLUX can run on a separate machine behind the image adapter; one GPU job at a time via the orchestrator |
+| **Limited GPU memory** | Gemma 4 E4B doesn't fit or is slow | Quantized E4B; E2B for classification and as full fallback; FLUX can run on a separate machine behind the image adapter; one GPU job at a time via the orchestrator |
 | **Slow end-to-end time** | Demo drags | Stream results stage by stage; classify tiles before extraction to cut tokens; generate images concurrently; text steps shown before images |
 | **Pop-ups, paywalls, bot protection** | Page can't be read | Navigator's `dismiss` action handles most pop-ups; a hard block is reported to the user with a suggestion to upload a PDF or "print to PDF" version instead |
 | **Prompt injection in page content** | Page text tries to steer the agent | Schema-only outputs; no typing, forms or logins; no secrets in the agent's context; domain lock |
