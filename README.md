@@ -100,7 +100,7 @@ Results stream to the Next.js frontend as they are produced. The user sees the t
 2. **Faithful extraction.** Steps, materials and tools must come from the source, not be invented. Target: ≥ 90% step recall and ≥ 85% materials F1 on our labelled test set.
 3. **Images that match the step.** Every image shown to the user has passed Gemma 4's verification, or is the source's own photo.
 4. **Fast first result.** Text steps visible in under 60 seconds for a typical single-page guide on a consumer GPU laptop.
-5. **Local intelligence.** All reading, reasoning and verification run on Gemma 4 locally. Only image generation calls an external service, and it serves an open-weight model that can be swapped for a local one.
+5. **Local intelligence.** All reading, reasoning and verification run on Gemma 4 locally. Image generation uses an open-weight model behind an adapter, so where it runs is a deployment choice, not a design change.
 6. **Measured, not claimed.** Ship a reproducible evaluation script and report the results.
 
 ---
@@ -128,7 +128,7 @@ Results stream to the Next.js frontend as they are produced. The user sees the t
 |---|---|---|
 | **Gemma 4 E4B (instruction-tuned)**, Google | The core intelligence: browser-agent decisions, tile classification, structured extraction, prompt writing, image verification, grounded Q&A | Apache 2.0 |
 | **Gemma 4 E2B** | Fallback for 4–6 GB VRAM laptops and for the cheaper tile-classification step | Apache 2.0 |
-| **FLUX.1-schnell**, Black Forest Labs | Step-illustration generation (open-weight model, called through a hosted inference provider) | Apache 2.0 |
+| **FLUX.1-schnell**, Black Forest Labs | Step-illustration generation (open-weight model behind an image adapter) | Apache 2.0 |
 | **Ollama** | Local inference server for Gemma 4, with structured (JSON-schema) outputs | MIT |
 | **Playwright** | Headless browser the agent controls | Apache 2.0 |
 
@@ -152,10 +152,10 @@ Gemma 4 is the only reasoning model in the system. Without it, the product has n
 - **The pages are untrusted.** Web pages can contain prompt-injection text. A local model with a narrow, schema-constrained job, and no access to user accounts or secrets, limits what such text can do.
 - **Reproducibility.** Judges and contributors can run the exact same model and get the same behaviour.
 
-**Why FLUX.1-schnell through a hosted provider**
+**Why FLUX.1-schnell, behind an adapter**
 
-- Image generation is the one heavy workload that does not fit alongside Gemma 4 on a 4–8 GB GPU. FLUX.1-schnell is open-weight under Apache 2.0, produces good images in 1–4 sampling steps, and is served by several inference providers.
-- We call it through a small adapter interface. The provider can be changed with one config value, and on a bigger GPU the adapter can point at a local FLUX server. No proprietary model is involved.
+- FLUX.1-schnell is open-weight under Apache 2.0 and produces good images in 1–4 sampling steps, which keeps per-step generation fast enough for retries.
+- Image generation is the heaviest workload in the system. We call it through a small adapter interface (`generate(prompt, seed, size)`), so the same code works whether FLUX runs on the Gemma laptop, on a second GPU machine, or on a quantized build. We will choose the deployment based on the compute available at the final. No proprietary model is involved.
 
 **Alternatives considered**
 
@@ -208,10 +208,10 @@ flowchart LR
     end
 
     ORCH -->|image prompts| IMG[Image adapter]
-    IMG -->|HTTPS| FLUX[Hosted FLUX.1-schnell]
+    IMG --> FLUX[FLUX.1-schnell]
 ```
 
-**Deployment:** one GPU laptop runs everything except image generation. The backend, Ollama and the frontend start with a single `docker compose up`. The image adapter needs one API key for the chosen FLUX provider.
+**Deployment:** the backend, Ollama and the frontend run on one GPU laptop and start with a single `docker compose up`. FLUX runs wherever the available compute allows; the image adapter is configured with its address.
 
 ---
 
@@ -294,7 +294,7 @@ flowchart LR
 
 ### 11.7 Image adapter
 
-- A single interface `generate(prompt, seed, size) -> image`, with implementations for hosted FLUX.1-schnell providers. A local diffusers or ComfyUI backend can be added behind the same interface.
+- A single interface `generate(prompt, seed, size) -> image` in front of FLUX.1-schnell. The backend behind it (diffusers, ComfyUI or another FLUX server) is set in config.
 - Runs up to N requests concurrently (configurable), with timeouts and exponential back-off.
 
 ### 11.8 Verifier
@@ -361,7 +361,7 @@ sequenceDiagram
     API-->>FE: Answer
 ```
 
-**What leaves the machine:** only the image prompts sent to the FLUX provider. These are short descriptions written by the art director. Page screenshots, page text and user questions stay local.
+**What goes to the image model:** only short image prompts written by the art director. Page screenshots, page text and user questions never leave the Gemma side of the system.
 
 ---
 
@@ -427,7 +427,7 @@ Every decision (actions, verdicts, retries) is logged and visible in the UI's "h
 | Backend | Python, FastAPI, Pydantic, asyncio | Async jobs, strict schemas shared with the model's output |
 | Model serving | Ollama | Simple local serving of Gemma 4 with JSON-schema outputs; OpenAI-compatible API |
 | Core model | Gemma 4 E4B-it (quantized); E2B-it as fallback | Vision + structured output on a 4–8 GB GPU |
-| Image model | FLUX.1-schnell via hosted provider (adapter) | Open-weight, fast, good quality; swappable for local |
+| Image model | FLUX.1-schnell behind an adapter | Open-weight, fast, good quality; deployment set by available compute |
 | Browser automation | Playwright (Chromium) | Reliable headless browsing, screenshots, element boxes |
 | Page text | trafilatura | Clean main-text extraction to ground the vision model |
 | PDF | pypdfium2 | Page rendering and text layer, permissive license |
@@ -555,7 +555,7 @@ Blocks 1–2 (backend and agent) and block 3 (frontend, against a mocked event s
 | [SQLite](https://sqlite.org) | Storage | Public domain |
 | [Docker Compose](https://github.com/docker/compose) | Packaging | Apache 2.0 |
 
-The only non-open-source part is the hosted inference service that runs FLUX.1-schnell. It is reached through a swappable adapter, and the model itself is open-weight.
+Every model and library in the system is open source or open-weight.
 
 ---
 
@@ -567,12 +567,12 @@ The only non-open-source part is the hosted inference service that runs FLUX.1-s
 | **Extraction hallucinates steps or materials** | Guide no longer matches the source | Every step must cite source tiles; overlap check against DOM text; low-overlap steps re-extracted; measured by step precision in evaluation |
 | **Generated images don't match steps** | Misleading guide | Gemma verifier on every image; up to two corrected retries; fall back to source photo or text-only; badges show which is which |
 | **Inconsistent look across step images** | Guide looks stitched together | Shared style sheet from the hero photo; fixed seed per project; framing vocabulary in prompts |
-| **VRAM limits (4–8 GB)** | Gemma 4 E4B doesn't fit or is slow | Quantized E4B; E2B for classification and as full fallback; image generation offloaded to hosted FLUX; one GPU job at a time via the orchestrator |
+| **VRAM limits (4–8 GB)** | Gemma 4 E4B doesn't fit or is slow | Quantized E4B; E2B for classification and as full fallback; FLUX can run on a separate machine behind the image adapter; one GPU job at a time via the orchestrator |
 | **Slow end-to-end time** | Demo drags | Stream results stage by stage; classify tiles before extraction to cut tokens; generate images concurrently; text steps shown before images |
 | **Pop-ups, paywalls, bot protection** | Page can't be read | Navigator's `dismiss` action handles most pop-ups; a hard block is reported to the user with a suggestion to upload a PDF or "print to PDF" version instead |
 | **Prompt injection in page content** | Page text tries to steer the agent | Schema-only outputs; no typing, forms or logins; no secrets in the agent's context; domain lock |
 | **Copyright of source content** | Republishing others' guides | CraftGemma is a personal reading tool: it always links the source, credits the author, keeps source photos attributed, and does not publish guides publicly by default |
-| **Image provider outage or rate limits** | No illustrations | Retries with back-off; second provider configured in the adapter; the guide is still fully usable with source photos and text |
+| **Image generation slow or unavailable** | No illustrations | Retries with back-off; a lower step count or smaller resolution when the GPU is busy; the guide is still fully usable with source photos and text |
 | **Hackathon time** | Not everything gets built | Features split into core and stretch (section 15); frontend built against a mocked event stream from the start, so integration isn't a last-minute risk |
 
 ---
