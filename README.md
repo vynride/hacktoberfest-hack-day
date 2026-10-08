@@ -193,29 +193,11 @@ The surrounding code is deterministic. It runs the browser, deduplicates tiles, 
 
 ## 10. System Architecture
 
-```mermaid
-flowchart LR
-    U[User] -->|URL or PDF| FE[Next.js frontend]
-    FE -->|REST: create job| API[FastAPI backend]
-    API -->|SSE: progress, steps, images| FE
+<p align="center">
+  <img width="1521" height="794" alt="CraftGemma system architecture: Next.js frontend, FastAPI backend and job orchestrator, reader with Playwright and PDF renderer, Gemma 4 roles on Ollama, SQLite and file store, image adapter to FLUX.1-schnell" src="https://github.com/user-attachments/assets/36e323c6-89d2-46c5-a4e8-d5d2e3620152" />
+</p>
 
-    subgraph Local["Local machine (GPU laptop)"]
-        API --> ORCH[Job orchestrator]
-        ORCH --> READ[Reader]
-        READ --> PW[Playwright browser]
-        READ --> PDF[PDF renderer]
-        ORCH --> EXT[Extractor]
-        ORCH --> ART[Art director]
-        ORCH --> VER[Verifier]
-        ORCH --> QA[Guide assistant]
-        READ & EXT & ART & VER & QA --> OLL[("Ollama · Gemma 4 E4B")]
-        ORCH --> DB[(SQLite)]
-        ORCH --> FS[("File store · tiles, photos, images")]
-    end
-
-    ORCH -->|image prompts| IMG[Image adapter]
-    IMG --> FLUX[FLUX.1-schnell]
-```
+<p align="center"><sub>Blue: Gemma 4. Yellow: deterministic code. Green: storage. Orange: image generation. Purple: user and frontend.</sub></p>
 
 **Deployment:** the backend, Ollama and the frontend run on one GPU laptop and start with a single `docker compose up`. FLUX runs wherever the available compute allows; the image adapter is configured with its address.
 
