@@ -373,18 +373,9 @@ CraftGemma has two agent loops. Both are bounded, observable and recoverable.
 
 ### 13.2 Illustrate-and-verify agent
 
-```mermaid
-flowchart TD
-    A[Step + style sheet] --> B[Art director writes prompt]
-    B --> C[FLUX generates image]
-    C --> D{"Gemma verifier: match and score ≥ 3?"}
-    D -->|yes| E["Show image (verified)"]
-    D -->|"no, retries left"| F[Rewrite prompt using listed problems]
-    F --> C
-    D -->|"no, retries spent"| G{Source photo exists?}
-    G -->|yes| H[Show source photo]
-    G -->|no| I["Text-only step, flagged"]
-```
+<p align="center">
+  <img width="894" height="964" alt="Illustrate-and-verify loop: art director writes prompt, FLUX generates image, Gemma verifier checks it, retries with a rewritten prompt, then falls back to the source photo or a flagged text-only step" src="https://github.com/user-attachments/assets/4411a8dc-b807-41c7-bf3e-03a0b326b395" />
+</p>
 
 Every decision (actions, verdicts, retries) is logged and visible in the UI's "how this guide was built" panel. That panel doubles as our debugging view and as part of the demo.
 
