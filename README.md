@@ -535,7 +535,6 @@ Every model and library in the system is open source or open-weight.
 | **Prompt injection in page content** | Page text tries to steer the agent | Schema-only outputs; no typing, forms or logins; no secrets in the agent's context; domain lock |
 | **Copyright of source content** | Republishing others' guides | CraftGemma is a personal reading tool: it always links the source, credits the author, keeps source photos attributed, and does not publish guides publicly by default |
 | **Image generation slow or unavailable** | No illustrations | Retries with back-off; a lower step count or smaller resolution when the GPU is busy; the guide is still fully usable with source photos and text |
-| **Hackathon time** | Not everything gets built | Features split into core and stretch (section 15); frontend built against a mocked event stream from the start, so integration isn't a last-minute risk |
 
 ---
 
