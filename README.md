@@ -13,6 +13,15 @@
   <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square" />
 </p>
 
+## Team V3A
+
+| Member | GitHub |
+|---|---|
+| Vivian Richard Demello | [@vynride](https://github.com/vynride) |
+| Amber Shukla | [@Shukl-amber](https://github.com/Shukl-amber) |
+| Anurag Sharma | [@anuragdotdev](https://github.com/anuragdotdev) |
+| Aaditya Hajari | [@adityahajari14](https://github.com/adityahajari14) |
+
 ---
 
 ## Table of Contents
